@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.facebook.AccessToken;
 import com.facebook.AccessTokenTracker;
 import com.facebook.CallbackManager;
@@ -48,14 +49,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-  //      FacebookSdk.sdkInitialize(getApplicationContext());
+   //     printKeyHash();
+        FacebookSdk.sdkInitialize(getApplicationContext());
 //        AppEventsLogger.activateApp(this);
 
         displayName = findViewById(R.id.display_name);
         emailID = findViewById(R.id.email);
         displayImage = findViewById(R.id.image_view);
         loginButton = findViewById(R.id.login_button);
-        loginButton.setReadPermissions(Arrays.asList("email"));
+        loginButton.setReadPermissions(Arrays.asList("email","public_profile"));
 
         // Creating CallbackManager
         callbackManager = CallbackManager.Factory.create();
@@ -65,18 +67,37 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(LoginResult loginResult) {
                 // Retrieving access token using the LoginResult
                 AccessToken accessToken = loginResult.getAccessToken();
-                Toast.makeText(getApplicationContext(),""+accessToken.toString(),Toast.LENGTH_LONG).show();
+            //    Toast.makeText(getApplicationContext(),""+accessToken.toString(),Toast.LENGTH_LONG).show();
                 useLoginInformation(accessToken);
 
             }
             @Override
             public void onCancel() {
+                Toast.makeText(getApplicationContext(),"onCancel",Toast.LENGTH_LONG).show();
             }
             @Override
             public void onError(FacebookException error) {
+                Log.e("TAG",error.toString());
+                Toast.makeText(getApplicationContext(),"onError"+error.getLocalizedMessage(),Toast.LENGTH_LONG).show();
             }
+
         });
 
+    }
+    private void printKeyHash() {
+        // Add code to print out the key hash
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo("Your Package Name", PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.e("KeyHash: AA", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e("KeyHash:", e.toString());
+        } catch (NoSuchAlgorithmException e) {
+            Log.e("KeyHash:", e.toString());
+        }
     }
 
     @Override
@@ -115,7 +136,10 @@ public class MainActivity extends AppCompatActivity {
                     String name = object.getString("name");
                     String email = object.getString("email");
                     String image = object.getJSONObject("picture").getJSONObject("data").getString("url");
+                //    Toast.makeText(getApplicationContext(),image,Toast.LENGTH_LONG).show();
+                    Log.i("image",image);
                     displayName.setText(name);
+                    Glide.with(getApplicationContext()).load(image).into(displayImage);
                     emailID.setText(email);
                 } catch (JSONException e) {
                     e.printStackTrace();
